@@ -48,7 +48,7 @@ class ClientListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         fab.setOnClickListener {
-            val i = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+            val i = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
             startActivityForResult(i, pickContact)
         }
 
@@ -72,7 +72,7 @@ class ClientListFragment : Fragment() {
             return
 
         val contactId = data.data
-        val projection = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
+        val projection = arrayOf(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
         val cursor = view?.context?.contentResolver?.query(contactId, projection, null, null, null) ?: return
         if (cursor.moveToFirst()) {
             val name = cursor.getString(0)

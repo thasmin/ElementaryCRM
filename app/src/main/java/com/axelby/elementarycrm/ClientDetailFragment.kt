@@ -172,16 +172,25 @@ class ClientDetailFragment : Fragment() {
         // get name and phone
         val projection = arrayOf(
                 ContactsContract.Contacts._ID,
-                ContactsContract.Contacts.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
+                ContactsContract.Contacts.DISPLAY_NAME
         )
         val cursor = context!!.contentResolver.query(Uri.parse(clientUri), projection, null, null, null)
         if (cursor.moveToFirst()) {
+            val contactId = cursor.getString(0)
             name.text = cursor.getString(1)
-            phone.text = cursor.getString(2)
+
+            // get phone number
+            val projection3 = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            val cursor3 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    projection3,
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=" + contactId,
+                    null,
+                    null)
+            if (cursor3.moveToFirst())
+                phone.text = cursor3.getString(0)
+            cursor3.close()
 
             // get email address
-            val contactId = cursor.getString(0)
             val projection2 = arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS)
             val cursor2 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI,
                     projection2,
