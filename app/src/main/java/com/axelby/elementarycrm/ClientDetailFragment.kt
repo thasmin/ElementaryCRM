@@ -271,7 +271,7 @@ class ClientDetailFragment : Fragment() {
             holder.createTime.setOnClickListener {
                 val textView = TextView(holder.itemView.context)
                 textView.setPadding(24, 24, 24, 24)
-                textView.setTextColor(holder.createTime.context.resources.getColor(R.color.primary_text_default_material_dark, null))
+                textView.setTextColor(holder.createTime.context.resources.getColor(R.color.colorTextMaterialDark, null))
                 textView.setBackgroundColor(holder.createTime.context.resources.getColor(R.color.colorPrimary, null))
                 textView.text = notes[position].date.toString()
 
