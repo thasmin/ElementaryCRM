@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Rect
@@ -20,6 +21,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.*
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -29,10 +31,11 @@ import java.util.*
 
 class ClientDetailFragment : Fragment() {
     private lateinit var clientUri: String
-
-    private val requestReadContacts = 0
     private var isFABOpen = false
     private val disposables = CompositeDisposable()
+
+    private val requestReadContacts = 0
+    private val requestCallPhone = 1
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -45,9 +48,14 @@ class ClientDetailFragment : Fragment() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if (requestCode != requestReadContacts || grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED)
+        if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED)
             return
-        loadClient()
+
+        when (requestCode) {
+            requestReadContacts -> loadClient()
+            requestCallPhone ->
+                startActivity(Intent(Intent.ACTION_CALL).apply { data = Uri.parse("tel:" + phone.text) })
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -56,6 +64,16 @@ class ClientDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        call_btn.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(view.context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
+                startActivity(Intent(Intent.ACTION_CALL).apply { data = Uri.parse("tel:" + phone.text) })
+            else
+                requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), requestCallPhone)
+        }
+        email_btn.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:" + email.text) })
+        }
 
         notes.layoutManager = LinearLayoutManager(view.context)
         reminders.layoutManager = LinearLayoutManager(view.context)
@@ -179,27 +197,23 @@ class ClientDetailFragment : Fragment() {
             val contactId = cursor.getString(0)
             name.text = cursor.getString(1)
 
-            // get phone number
-            val projection3 = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val cursor3 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                    projection3,
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=" + contactId,
-                    null,
-                    null)
-            if (cursor3.moveToFirst())
-                phone.text = cursor3.getString(0)
-            cursor3.close()
+            disposables.add(Single.fromCallable({ getPhoneNumber(contactId) })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            { phone.text = it },
+                            { Log.e("ClientDetailFragment", "unable to get phone number", it) }
+                    )
+            )
 
-            // get email address
-            val projection2 = arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS)
-            val cursor2 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-                    projection2,
-                    ContactsContract.CommonDataKinds.Email.CONTACT_ID + "=" + contactId,
-                    null,
-                    null)
-            if (cursor2.moveToFirst())
-                email.text = cursor2.getString(0)
-            cursor2.close()
+            disposables.add(Single.fromCallable({ getEmailAddress(contactId) })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            { email.text = it },
+                            { Log.e("ClientDetailFragment", "unable to get phone number", it) }
+                    )
+            )
 
             // get notes
             disposables.add(App.instance.db.clientDao().watchUri(clientUri)
@@ -215,6 +229,35 @@ class ClientDetailFragment : Fragment() {
             )
         }
         cursor.close()
+    }
+
+    private fun getEmailAddress(contactId: String?): String? {
+        val projection2 = arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS)
+        val cursor2 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+                projection2,
+                ContactsContract.CommonDataKinds.Email.CONTACT_ID + "=" + contactId,
+                null,
+                null)
+        var emailAddress: String? = null
+        if (cursor2.moveToFirst())
+            emailAddress = cursor2.getString(0)
+        cursor2.close()
+        return emailAddress
+    }
+
+    private fun getPhoneNumber(contactId: String): String? {
+        // get phone number
+        val projection3 = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        val cursor3 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                projection3,
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=" + contactId,
+                null,
+                null)
+        var phoneNumber: String? = null
+        if (cursor3.moveToFirst())
+            phoneNumber = cursor3.getString(0)
+        cursor3.close()
+        return phoneNumber
     }
 
     class NotesViewHolder(view: View) : RecyclerView.ViewHolder(view) {
