@@ -26,6 +26,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_client_detail.*
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.*
 
 
@@ -54,7 +58,7 @@ class ClientDetailFragment : Fragment() {
         when (requestCode) {
             requestReadContacts -> loadClient()
             requestCallPhone ->
-                startActivity(Intent(Intent.ACTION_CALL).apply { data = Uri.parse("tel:" + phone.text) })
+                startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phone.text)))
         }
     }
 
@@ -67,12 +71,12 @@ class ClientDetailFragment : Fragment() {
 
         call_btn.setOnClickListener {
             if (ContextCompat.checkSelfPermission(view.context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
-                startActivity(Intent(Intent.ACTION_CALL).apply { data = Uri.parse("tel:" + phone.text) })
+                startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phone.text)))
             else
                 requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), requestCallPhone)
         }
         email_btn.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:" + email.text) })
+            startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + email.text)))
         }
 
         notes.layoutManager = LinearLayoutManager(view.context)
@@ -93,11 +97,11 @@ class ClientDetailFragment : Fragment() {
     private fun createReminder() {
         closeFABMenu()
         val dateListener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
-            val reminderTime = Calendar.getInstance()
-            reminderTime.set(Calendar.SECOND, 0)
-            reminderTime.set(Calendar.YEAR, year)
-            reminderTime.set(Calendar.MONTH, month)
-            reminderTime.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            val reminderTime = LocalDateTime.now()
+                    .withSecond(0)
+                    .withYear(year)
+                    .withMonth(month + 1)
+                    .withDayOfMonth(dayOfMonth)
             showReminderTime(reminderTime)
         }
         val c = Calendar.getInstance()
@@ -107,25 +111,31 @@ class ClientDetailFragment : Fragment() {
         DatePickerDialog(context, dateListener, nowYear, nowMonth, nowDayOfMonth).show()
     }
 
-    private fun showReminderTime(reminderTime: Calendar) {
+    private fun showReminderTime(reminderTime: LocalDateTime) {
         val timeListener = TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
-            reminderTime.set(Calendar.HOUR_OF_DAY, hourOfDay)
-            reminderTime.set(Calendar.MINUTE, minute)
-            showReminderDescription(reminderTime)
+            showReminderDescription(reminderTime
+                    .withHour(hourOfDay)
+                    .withMinute(minute)
+            )
         }
         val nowHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         TimePickerDialog(context, timeListener, nowHour, 0, false).show()
     }
 
-    private fun showReminderDescription(reminderTime: Calendar) {
+    private fun showReminderDescription(reminderTime: LocalDateTime) {
         showTextInputDialog { reminder ->
             App.instance.db.clientDao().getByUri(clientUri)
                     .subscribeOn(Schedulers.io())
                     .observeOn(Schedulers.io())
                     .subscribe(
                             { client ->
-                                client.reminders.add(Note(reminderTime.time, reminder))
+                                // for debugging: put into past to see alarm in 1 second
+                                if (reminderTime.isBefore(LocalDateTime.now()))
+                                    client.reminders.add(Note(Instant.now().plusSeconds(1), reminder))
+                                else
+                                    client.reminders.add(Note(reminderTime.toInstant(ZoneOffset.UTC), reminder))
                                 App.instance.db.clientDao().save(client)
+                                setupAlarms(context!!)
                             },
                             { Log.e("ClientDetailFragment", "unable to load client to add note", it) }
                     )
@@ -140,7 +150,7 @@ class ClientDetailFragment : Fragment() {
                     .observeOn(Schedulers.io())
                     .subscribe(
                             { client ->
-                                client.notes.add(Note(Date(), note))
+                                client.notes.add(Note(Instant.now(), note))
                                 App.instance.db.clientDao().save(client)
                             },
                             { Log.e("ClientDetailFragment", "unable to load client to add note", it) }
@@ -187,7 +197,7 @@ class ClientDetailFragment : Fragment() {
             return
         clientUri = arguments?.getString("client_uri") ?: return
 
-        // get name and phone
+        // get name
         val projection = arrayOf(
                 ContactsContract.Contacts._ID,
                 ContactsContract.Contacts.DISPLAY_NAME
@@ -197,7 +207,7 @@ class ClientDetailFragment : Fragment() {
             val contactId = cursor.getString(0)
             name.text = cursor.getString(1)
 
-            disposables.add(Single.fromCallable({ getPhoneNumber(contactId) })
+            disposables.add(Single.fromCallable({ getPhoneNumber(context!!, contactId) })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
@@ -206,7 +216,7 @@ class ClientDetailFragment : Fragment() {
                     )
             )
 
-            disposables.add(Single.fromCallable({ getEmailAddress(contactId) })
+            disposables.add(Single.fromCallable({ getEmailAddress(context!!, contactId) })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
@@ -222,7 +232,7 @@ class ClientDetailFragment : Fragment() {
                     .subscribe(
                             {
                                 notes.adapter = NotesAdapter(it.notes)
-                                reminders.adapter = NotesAdapter(it.reminders)
+                                reminders.adapter = RemindersAdapter(it.reminders)
                             },
                             { Log.e("ClientDetailFragment", "unable to retrieve client from db", it) }
                     )
@@ -231,33 +241,59 @@ class ClientDetailFragment : Fragment() {
         cursor.close()
     }
 
-    private fun getEmailAddress(contactId: String?): String? {
-        val projection2 = arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS)
-        val cursor2 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-                projection2,
-                ContactsContract.CommonDataKinds.Email.CONTACT_ID + "=" + contactId,
-                null,
-                null)
-        var emailAddress: String? = null
-        if (cursor2.moveToFirst())
-            emailAddress = cursor2.getString(0)
-        cursor2.close()
-        return emailAddress
+    private fun showDate(view: View, date: Instant) {
+        val textView = TextView(view.context)
+        textView.setPadding(24, 24, 24, 24)
+        textView.setTextColor(view.context.resources.getColor(R.color.colorTextMaterialDark, null))
+        textView.setBackgroundColor(view.context.resources.getColor(R.color.colorPrimary, null))
+        textView.text = LocalDateTime.ofInstant(date, ZoneId.systemDefault()).toString()
+
+        val popup = PopupWindow(textView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        popup.elevation = 5.0f
+        // dismiss by touching outside
+        popup.isFocusable = true
+        popup.isOutsideTouchable = true
+        popup.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val rect = Rect()
+        view.getGlobalVisibleRect(rect)
+        popup.showAtLocation(
+                view,
+                Gravity.NO_GRAVITY,
+                rect.left,
+                rect.top + view.height)
     }
 
-    private fun getPhoneNumber(contactId: String): String? {
-        // get phone number
-        val projection3 = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
-        val cursor3 = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                projection3,
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=" + contactId,
-                null,
-                null)
-        var phoneNumber: String? = null
-        if (cursor3.moveToFirst())
-            phoneNumber = cursor3.getString(0)
-        cursor3.close()
-        return phoneNumber
+    class RemindersViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val createTime: ImageView = view.findViewById(R.id.createTime)
+        val text: TextView = view.findViewById(R.id.description)
+        val delete: ImageButton = view.findViewById(R.id.delete)
+    }
+
+    inner class RemindersAdapter(private val notes: List<Note>) : RecyclerView.Adapter<RemindersViewHolder>() {
+        override fun onBindViewHolder(holder: RemindersViewHolder, position: Int) {
+            holder.createTime.setOnClickListener { showDate(holder.createTime, notes[position].date) }
+            holder.text.text = notes[position].text
+            holder.delete.setOnClickListener {
+                if (isFABOpen)
+                    return@setOnClickListener
+                App.instance.db.clientDao().getByUri(this@ClientDetailFragment.clientUri)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(Schedulers.io())
+                        .subscribe(
+                                { client ->
+                                    client.reminders.removeAt(position)
+                                    App.instance.db.clientDao().save(client)
+                                },
+                                { Log.e("ClientDetailFragment", "unable to load client to add note", it) }
+                        )
+            }
+        }
+
+        override fun getItemCount() = notes.size
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RemindersViewHolder {
+            return RemindersViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_note, parent, false))
+        }
     }
 
     class NotesViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -268,27 +304,7 @@ class ClientDetailFragment : Fragment() {
 
     inner class NotesAdapter(private val notes: List<Note>) : RecyclerView.Adapter<NotesViewHolder>() {
         override fun onBindViewHolder(holder: NotesViewHolder, position: Int) {
-            holder.createTime.setOnClickListener {
-                val textView = TextView(holder.itemView.context)
-                textView.setPadding(24, 24, 24, 24)
-                textView.setTextColor(holder.createTime.context.resources.getColor(R.color.colorTextMaterialDark, null))
-                textView.setBackgroundColor(holder.createTime.context.resources.getColor(R.color.colorPrimary, null))
-                textView.text = notes[position].date.toString()
-
-                val popup = PopupWindow(textView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                popup.elevation = 5.0f
-                // dismiss by touching outside
-                popup.isFocusable = true
-                popup.isOutsideTouchable = true
-                popup.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                val rect = Rect()
-                holder.createTime.getGlobalVisibleRect(rect)
-                popup.showAtLocation(
-                        holder.createTime,
-                        Gravity.NO_GRAVITY,
-                        rect.left,
-                        rect.top + holder.createTime.height)
-            }
+            holder.createTime.setOnClickListener { showDate(holder.createTime, notes[position].date) }
             holder.text.text = notes[position].text
             holder.delete.setOnClickListener {
                 if (isFABOpen)

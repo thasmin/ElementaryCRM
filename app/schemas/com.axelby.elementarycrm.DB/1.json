@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "db9d6b90f3191e9aecfba0450ed1b1fa",
+    "identityHash": "bf1fcc934f1cb8d1ea8b72461b933673",
     "entities": [
       {
         "tableName": "clients",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`uri`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `name` TEXT NOT NULL, `notes` TEXT NOT NULL, `reminders` TEXT NOT NULL, PRIMARY KEY(`uri`))",
         "fields": [
           {
             "fieldPath": "uri",
@@ -17,6 +17,18 @@
           {
             "fieldPath": "name",
             "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reminders",
+            "columnName": "reminders",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -33,7 +45,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"db9d6b90f3191e9aecfba0450ed1b1fa\")"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"bf1fcc934f1cb8d1ea8b72461b933673\")"
     ]
   }
 }

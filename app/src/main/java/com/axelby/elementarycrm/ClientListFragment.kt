@@ -55,7 +55,7 @@ class ClientListFragment : Fragment() {
         clientList.setHasFixedSize(true)
         clientList.layoutManager = LinearLayoutManager(context)
         clientList.adapter = adapter
-        disposables.add(App.instance.db.clientDao().getAll()
+        disposables.add(App.instance.db.clientDao().watchAll()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         {

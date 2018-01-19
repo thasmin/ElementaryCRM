@@ -10,7 +10,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Instant
-import java.util.*
 
 @RunWith(AndroidJUnit4::class)
 class DBTests {
@@ -34,9 +33,9 @@ class DBTests {
 
     @Test
     fun testClientDao() {
-        val noteDate = Date()
+        val noteDate = Instant.now()
         val noteText = "note"
-        val reminderDate = Date.from(Instant.now().plusMillis(1 * 1000 * 60))
+        val reminderDate = Instant.now().plusSeconds(10)
         val reminderText = "note"
         db.clientDao().save(Client(
                 "1",
@@ -44,7 +43,7 @@ class DBTests {
                 notes = arrayListOf(Note(noteDate, noteText)),
                 reminders = arrayListOf(Note(reminderDate, reminderText)))
         )
-        val tests = db.clientDao().getAll().test()
+        val tests = db.clientDao().watchAll().test()
         tests.assertValueCount(1)
         tests.assertValueAt(0) { it[0].uri == "1" }
         tests.assertValueAt(0) { it[0].name == "Dan" }
@@ -64,7 +63,7 @@ class DBTests {
         db.clientDao().save(client)
         val test = db.clientDao().getByUri("1").test()
         test.assertValue { it.notes.size == 0 }
-        client.notes.add(Note(Date(), "have a note"))
+        client.notes.add(Note(Instant.now(), "have a note"))
         db.clientDao().save(client)
         test.assertValue { it.notes.size == 0 }
     }
@@ -75,10 +74,12 @@ class DBTests {
         db.clientDao().save(client)
         val test = db.clientDao().watchUri("1").test()
         test.assertValue { it.notes.size == 0 }
-        val date = Date()
+        val date = Instant.now()
         client.notes.add(Note(date, "have a note"))
         db.clientDao().save(client)
         test.assertValueCount(2)
-        test.assertValueAt(1) { it.notes.size == 1 && it.notes[0].date == date && it.notes[0].text == "have a note" }
+        test.assertValueAt(1) { it.notes.size == 1 }
+        test.assertValueAt(1) { it.notes[0].date == date }
+        test.assertValueAt(1) { it.notes[0].text == "have a note" }
     }
 }

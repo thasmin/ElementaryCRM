@@ -1,6 +1,5 @@
 package com.axelby.elementarycrm
 
-import android.arch.persistence.db.SupportSQLiteDatabase
 import android.arch.persistence.room.*
 import android.arch.persistence.room.migration.Migration
 import android.util.JsonReader
@@ -9,10 +8,9 @@ import io.reactivex.Flowable
 import io.reactivex.Single
 import java.io.StringReader
 import java.io.StringWriter
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.Instant
 
-data class Note(val date: Date, val text: String)
+data class Note(val date: java.time.Instant, val text: String)
 
 @Entity(tableName = "clients")
 data class Client(
@@ -25,7 +23,10 @@ data class Client(
 @Dao()
 interface ClientDao {
     @Query("SELECT * FROM clients ORDER BY name")
-    fun getAll(): Flowable<List<Client>>
+    fun getAll(): Single<List<Client>>
+
+    @Query("SELECT * FROM clients ORDER BY name")
+    fun watchAll(): Flowable<List<Client>>
 
     @Query("SELECT * FROM clients WHERE uri = :arg0 ORDER BY name")
     fun getByUri(arg0: String): Single<Client>
@@ -44,8 +45,6 @@ interface ClientDao {
 }
 
 class Converters {
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US)
-
     @TypeConverter
     fun fromNoteList(strings: MutableList<Note>?): String? {
         val result = StringWriter()
@@ -54,7 +53,7 @@ class Converters {
         strings?.forEach {
             json.beginObject()
             json.name("date")
-            json.value(dateFormat.format(it.date))
+            json.value(it.date.toEpochMilli())
             json.name("text")
             json.value(it.text)
             json.endObject()
@@ -75,7 +74,7 @@ class Converters {
         while (json.hasNext()) {
             json.beginObject()
             json.nextName()
-            val date = dateFormat.parse(json.nextString())
+            val date = Instant.ofEpochMilli(json.nextLong())
             json.nextName()
             val text = json.nextString()
             result.add(Note(date, text))
@@ -87,27 +86,12 @@ class Converters {
 }
 
 @TypeConverters(Converters::class)
-@Database(entities = [(Client::class)], version = 3)
+@Database(entities = [(Client::class)], version = 1)
 abstract class DB : RoomDatabase() {
     abstract fun clientDao(): ClientDao
 
     companion object {
-
-        @Suppress("PropertyName")
-        val MIGRATION_1_2: Migration = object : Migration(1, 2) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE clients ADD COLUMN notes TEXT NOT NULL DEFAULT '[]'")
-            }
-        }
-
-        @Suppress("PropertyName")
-        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE clients ADD COLUMN reminders TEXT NOT NULL DEFAULT '[]'")
-            }
-        }
-
-        val allMigrations = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+        val allMigrations = arrayOf<Migration>()
     }
 }
 
