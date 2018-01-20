@@ -204,6 +204,7 @@ class ClientDetailFragment : Fragment() {
         if (cursor.moveToFirst()) {
             val contactId = cursor.getString(0)
             name.text = cursor.getString(1)
+            (activity as? TitleChanger)?.changeTitle(cursor.getString(1))
 
             disposables.add(Single.fromCallable({ getPhoneNumber(context!!, contactId) })
                     .subscribeOn(Schedulers.io())
