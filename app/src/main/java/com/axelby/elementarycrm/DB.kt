@@ -53,7 +53,7 @@ class Converters {
         strings?.forEach {
             json.beginObject()
             json.name("date")
-            json.value(it.date.toEpochMilli())
+            json.value(it.date.epochSecond)
             json.name("text")
             json.value(it.text)
             json.endObject()
@@ -74,7 +74,7 @@ class Converters {
         while (json.hasNext()) {
             json.beginObject()
             json.nextName()
-            val date = Instant.ofEpochMilli(json.nextLong())
+            val date = Instant.ofEpochSecond(json.nextLong())
             json.nextName()
             val text = json.nextString()
             result.add(Note(date, text))

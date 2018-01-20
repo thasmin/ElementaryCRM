@@ -35,6 +35,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ReminderDelayerActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme" />
+
         <receiver android:name=".Notifier" />
     </application>
 

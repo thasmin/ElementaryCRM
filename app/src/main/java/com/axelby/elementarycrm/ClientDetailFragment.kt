@@ -28,10 +28,7 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_client_detail.*
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.ZoneOffset
-import java.util.*
-
 
 class ClientDetailFragment : Fragment() {
     private lateinit var clientUri: String
@@ -96,19 +93,19 @@ class ClientDetailFragment : Fragment() {
 
     private fun createReminder() {
         closeFABMenu()
+        showReminderDate()
+    }
+
+    private fun showReminderDate() {
         val dateListener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
             val reminderTime = LocalDateTime.now()
-                    .withSecond(0)
                     .withYear(year)
                     .withMonth(month + 1)
                     .withDayOfMonth(dayOfMonth)
             showReminderTime(reminderTime)
         }
-        val c = Calendar.getInstance()
-        val nowYear = c.get(Calendar.YEAR)
-        val nowMonth = c.get(Calendar.MONTH)
-        val nowDayOfMonth = c.get(Calendar.DAY_OF_MONTH)
-        DatePickerDialog(context, dateListener, nowYear, nowMonth, nowDayOfMonth).show()
+        val now = LocalDateTime.now()
+        DatePickerDialog(context, dateListener, now.year, now.monthValue - 1, now.dayOfMonth).show()
     }
 
     private fun showReminderTime(reminderTime: LocalDateTime) {
@@ -116,10 +113,11 @@ class ClientDetailFragment : Fragment() {
             showReminderDescription(reminderTime
                     .withHour(hourOfDay)
                     .withMinute(minute)
+                    .withSecond(0)
+                    .withNano(0)
             )
         }
-        val nowHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        TimePickerDialog(context, timeListener, nowHour, 0, false).show()
+        TimePickerDialog(context, timeListener, LocalDateTime.now().hour, 0, false).show()
     }
 
     private fun showReminderDescription(reminderTime: LocalDateTime) {
@@ -244,9 +242,8 @@ class ClientDetailFragment : Fragment() {
     private fun showDate(view: View, date: Instant) {
         val textView = TextView(view.context)
         textView.setPadding(24, 24, 24, 24)
-        textView.setTextColor(view.context.resources.getColor(R.color.colorTextMaterialDark, null))
-        textView.setBackgroundColor(view.context.resources.getColor(R.color.colorPrimary, null))
-        textView.text = LocalDateTime.ofInstant(date, ZoneId.systemDefault()).toString()
+        textView.setBackgroundColor(view.context.resources.getColor(R.color.colorAccent, null))
+        textView.text = toReminderTime(date)
 
         val popup = PopupWindow(textView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         popup.elevation = 5.0f

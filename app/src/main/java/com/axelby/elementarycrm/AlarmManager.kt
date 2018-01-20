@@ -16,7 +16,7 @@ class Notifier : BroadcastReceiver() {
         val uri = intent.getStringExtra("uri")
         val notificationId = intent.getIntExtra("notificationId", 0)
         val name = intent.getStringExtra("name")
-        val date = Instant.ofEpochMilli(intent.getLongExtra("date", Instant.now().toEpochMilli()))
+        val date = Instant.ofEpochSecond(intent.getLongExtra("date", Instant.now().epochSecond))
         val desc = intent.getStringExtra("description")
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -31,12 +31,17 @@ class Notifier : BroadcastReceiver() {
         }
         notificationManager.createNotificationChannel(notificationChannel)
 
+        val delayIntent = Intent(context, ReminderDelayerActivity::class.java)
+        delayIntent.putExtras(intent)
+        val delayPendingIntent = PendingIntent.getActivity(context, notificationId, delayIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+        val delayAction = Notification.Action.Builder(Icon.createWithResource(context, R.drawable.ic_access_time_black_24dp), "Delay", delayPendingIntent).build()
+
         val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:" + getPhoneNumberFromUri(context, uri)))
-        val callPendingIntent = PendingIntent.getActivity(context, 0, callIntent, 0)
+        val callPendingIntent = PendingIntent.getActivity(context, notificationId, callIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         val callAction = Notification.Action.Builder(Icon.createWithResource(context, R.drawable.ic_phone_black_24dp), "Call", callPendingIntent).build()
 
         val emailIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + getEmailAddressFromUri(context, uri)))
-        val emailPendingIntent = PendingIntent.getActivity(context, 0, emailIntent, 0)
+        val emailPendingIntent = PendingIntent.getActivity(context, notificationId, emailIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         val emailAction = Notification.Action.Builder(Icon.createWithResource(context, R.drawable.ic_email_black_24dp), "Email", emailPendingIntent).build()
 
         val notification = Notification.Builder(context, "client")
@@ -44,7 +49,7 @@ class Notifier : BroadcastReceiver() {
                 .setContentTitle(name)
                 .setSmallIcon(R.drawable.ic_access_time_black_24dp)
                 .addPerson(uri)
-                .setActions(callAction, emailAction)
+                .setActions(delayAction, callAction, emailAction)
                 .build()
         notificationManager.notify(notificationId, notification)
 
@@ -81,7 +86,7 @@ fun setupAlarms(context: Context) {
                         alarmIntent.putExtra("notificationId", notificationId)
                         alarmIntent.putExtra("uri", it.uri)
                         alarmIntent.putExtra("name", it.name)
-                        alarmIntent.putExtra("date", it.reminders[0].date.toEpochMilli())
+                        alarmIntent.putExtra("date", it.reminders[0].date.epochSecond)
                         alarmIntent.putExtra("description", it.reminders[0].text)
                         val pendingAlarmIntent = PendingIntent.getBroadcast(context, notificationId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT)
                         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.reminders[0].date.toEpochMilli(), pendingAlarmIntent)

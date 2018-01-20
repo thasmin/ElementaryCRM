@@ -17,4 +17,7 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="create_time">create time</string>
+    <string name="client">Client</string>
+    <string name="change">Change</string>
+    <string name="when">When</string>
 </resources>

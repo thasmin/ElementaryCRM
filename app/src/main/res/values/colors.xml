@@ -6,5 +6,5 @@
     <color name="colorTertiary">#FFC107</color>
 
     <!-- private android resource colors -->
-    <color name="colorTextMaterialDark">#ffffffff</color>
+    <color name="textColorOnPrimary">#ffffffff</color>
 </resources>
