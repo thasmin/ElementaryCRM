@@ -9,7 +9,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.Instant
+import java.time.LocalDateTime
 
 @RunWith(AndroidJUnit4::class)
 class DBTests {
@@ -33,9 +33,9 @@ class DBTests {
 
     @Test
     fun testClientDao() {
-        val noteDate = Instant.now()
+        val noteDate = LocalDateTime.now().withNano(0)
         val noteText = "note"
-        val reminderDate = Instant.now().plusSeconds(10)
+        val reminderDate = noteDate.plusSeconds(10)
         val reminderText = "note"
         db.clientDao().save(Client(
                 "1",
@@ -63,7 +63,7 @@ class DBTests {
         db.clientDao().save(client)
         val test = db.clientDao().getByUri("1").test()
         test.assertValue { it.notes.size == 0 }
-        client.notes.add(Note(Instant.now(), "have a note"))
+        client.notes.add(Note(LocalDateTime.now(), "have a note"))
         db.clientDao().save(client)
         test.assertValue { it.notes.size == 0 }
     }
@@ -74,7 +74,7 @@ class DBTests {
         db.clientDao().save(client)
         val test = db.clientDao().watchUri("1").test()
         test.assertValue { it.notes.size == 0 }
-        val date = Instant.now()
+        val date = LocalDateTime.now().withNano(0)
         client.notes.add(Note(date, "have a note"))
         db.clientDao().save(client)
         test.assertValueCount(2)

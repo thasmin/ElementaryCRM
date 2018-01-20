@@ -8,9 +8,10 @@ import io.reactivex.Flowable
 import io.reactivex.Single
 import java.io.StringReader
 import java.io.StringWriter
-import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
-data class Note(val date: java.time.Instant, val text: String)
+data class Note(val date: java.time.LocalDateTime, val text: String)
 
 @Entity(tableName = "clients")
 data class Client(
@@ -53,7 +54,7 @@ class Converters {
         strings?.forEach {
             json.beginObject()
             json.name("date")
-            json.value(it.date.epochSecond)
+            json.value(it.date.toEpochSecond(ZoneOffset.UTC))
             json.name("text")
             json.value(it.text)
             json.endObject()
@@ -74,7 +75,7 @@ class Converters {
         while (json.hasNext()) {
             json.beginObject()
             json.nextName()
-            val date = Instant.ofEpochSecond(json.nextLong())
+            val date = LocalDateTime.ofEpochSecond(json.nextLong(), 0, ZoneOffset.UTC)
             json.nextName()
             val text = json.nextString()
             result.add(Note(date, text))

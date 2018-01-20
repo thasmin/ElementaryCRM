@@ -8,15 +8,15 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.util.Log
 import io.reactivex.schedulers.Schedulers
-import java.time.Instant
-
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class Notifier : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val uri = intent.getStringExtra("uri")
         val notificationId = intent.getIntExtra("notificationId", 0)
         val name = intent.getStringExtra("name")
-        val date = Instant.ofEpochSecond(intent.getLongExtra("date", Instant.now().epochSecond))
+        val date = LocalDateTime.ofEpochSecond(intent.getLongExtra("date", 0), 0, ZoneOffset.UTC)
         val desc = intent.getStringExtra("description")
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -86,10 +86,10 @@ fun setupAlarms(context: Context) {
                         alarmIntent.putExtra("notificationId", notificationId)
                         alarmIntent.putExtra("uri", it.uri)
                         alarmIntent.putExtra("name", it.name)
-                        alarmIntent.putExtra("date", it.reminders[0].date.epochSecond)
+                        alarmIntent.putExtra("date", it.reminders[0].date.toEpochSecond(ZoneOffset.UTC))
                         alarmIntent.putExtra("description", it.reminders[0].text)
                         val pendingAlarmIntent = PendingIntent.getBroadcast(context, notificationId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.reminders[0].date.toEpochMilli(), pendingAlarmIntent)
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.reminders[0].date.toEpochSecond(ZoneOffset.UTC) * 1000, pendingAlarmIntent)
                         notificationId += 1
                     },
                     { Log.e("setupAlarms", "unable to find reminders", it) }

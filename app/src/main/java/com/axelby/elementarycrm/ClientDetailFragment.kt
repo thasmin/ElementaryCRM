@@ -26,9 +26,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_client_detail.*
-import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 class ClientDetailFragment : Fragment() {
     private lateinit var clientUri: String
@@ -129,9 +127,9 @@ class ClientDetailFragment : Fragment() {
                             { client ->
                                 // for debugging: put into past to see alarm in 1 second
                                 if (reminderTime.isBefore(LocalDateTime.now()))
-                                    client.reminders.add(Note(Instant.now().plusSeconds(1), reminder))
+                                    client.reminders.add(Note(LocalDateTime.now().plusSeconds(1), reminder))
                                 else
-                                    client.reminders.add(Note(reminderTime.toInstant(ZoneOffset.UTC), reminder))
+                                    client.reminders.add(Note(reminderTime, reminder))
                                 App.instance.db.clientDao().save(client)
                                 setupAlarms(context!!)
                             },
@@ -148,7 +146,7 @@ class ClientDetailFragment : Fragment() {
                     .observeOn(Schedulers.io())
                     .subscribe(
                             { client ->
-                                client.notes.add(Note(Instant.now(), note))
+                                client.notes.add(Note(LocalDateTime.now(), note))
                                 App.instance.db.clientDao().save(client)
                             },
                             { Log.e("ClientDetailFragment", "unable to load client to add note", it) }
@@ -240,7 +238,7 @@ class ClientDetailFragment : Fragment() {
         cursor.close()
     }
 
-    private fun showDate(view: View, date: Instant) {
+    private fun showDate(view: View, date: LocalDateTime) {
         val textView = TextView(view.context)
         textView.setPadding(24, 24, 24, 24)
         textView.setBackgroundColor(view.context.resources.getColor(R.color.colorAccent, null))

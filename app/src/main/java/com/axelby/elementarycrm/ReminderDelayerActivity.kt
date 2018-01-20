@@ -20,7 +20,6 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_reminder_delayer.*
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -28,7 +27,7 @@ class ReminderDelayerActivity : AppCompatActivity() {
     private val requestCallPhone = 1
 
     private lateinit var clientUri: String
-    private lateinit var notificationDate: Instant
+    private lateinit var notificationDate: LocalDateTime
     private lateinit var notificationText: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +36,7 @@ class ReminderDelayerActivity : AppCompatActivity() {
         clientUri = intent.getStringExtra("uri")
         val notificationId = intent.getIntExtra("notificationId", 0)
         val name = intent.getStringExtra("name")
-        notificationDate = Instant.ofEpochSecond(intent.getLongExtra("date", Instant.now().epochSecond))
+        notificationDate = LocalDateTime.ofEpochSecond(intent.getLongExtra("date", 0), 0, ZoneOffset.UTC)
         notificationText = intent.getStringExtra("description")
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -124,14 +123,14 @@ class ReminderDelayerActivity : AppCompatActivity() {
                     .withMinute(minute)
                     .withSecond(0)
                     .withNano(0)
-            notificationDate = finalTime.toInstant(ZoneOffset.UTC)
+            notificationDate = finalTime
             date.text = toReminderTime(finalTime)
         }
         TimePickerDialog(this, timeListener, LocalDateTime.now().hour, 0, false).show()
     }
 
     private fun saveReminder() {
-        val noteDate = if (notificationDate.isAfter(Instant.now())) notificationDate else Instant.now().plusSeconds(1)
+        val noteDate = if (notificationDate.isAfter(LocalDateTime.now())) notificationDate else LocalDateTime.now().plusSeconds(1)
         val note = Note(noteDate, notificationText)
         App.instance.db.clientDao().getByUri(clientUri)
                 .observeOn(Schedulers.io())

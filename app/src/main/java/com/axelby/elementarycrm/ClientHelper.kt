@@ -3,26 +3,26 @@ package com.axelby.elementarycrm
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
-import java.time.*
+import java.time.LocalDateTime
+import java.time.Period
 import java.time.format.DateTimeFormatter
 
 fun toReminderTime(date: LocalDateTime, now: LocalDateTime = LocalDateTime.now()): String {
-    return toReminderTime(date.toInstant(ZoneOffset.UTC), now.toInstant(ZoneOffset.UTC))
-}
-
-fun toReminderTime(date: Instant, now: Instant = Instant.now()): String {
-    val zonedDateTime = date.atZone(ZoneId.systemDefault())
-    val daysDiff = Duration.between(now.atZone(ZoneId.systemDefault()), zonedDateTime).toDays()
+    val daysDiff = Period.between(now.toLocalDate(), date.toLocalDate()).days
     val timeFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("h:mm a") }
     val thisWeekFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("EEEE 'at' h:mm a") }
     val nextWeekFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("'next' EEEE 'at' h:mm a") }
+    val lastWeekFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("'last' EEEE 'at' h:mm a") }
     val otherwiseFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("MMMM d 'at' h:mm a") }
-    return when {
-        daysDiff == 0L -> "today at " + timeFormatter.format(zonedDateTime)
-        daysDiff == 1L -> "tomorrow at " + timeFormatter.format(zonedDateTime)
-        daysDiff < 7 -> thisWeekFormatter.format(zonedDateTime)
-        daysDiff < 14 -> nextWeekFormatter.format(zonedDateTime)
-        else -> otherwiseFormatter.format(zonedDateTime)
+    return when (daysDiff) {
+        in -6..-3 -> lastWeekFormatter.format(date)
+        -2 -> "two days ago at " + timeFormatter.format(date)
+        -1 -> "yesterday at " + timeFormatter.format(date)
+        0 -> "today at " + timeFormatter.format(date)
+        1 -> "tomorrow at " + timeFormatter.format(date)
+        in 2..6 -> thisWeekFormatter.format(date)
+        in 7..13 -> nextWeekFormatter.format(date)
+        else -> otherwiseFormatter.format(date)
     }
 }
 
