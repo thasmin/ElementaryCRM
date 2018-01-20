@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="@string/phone"
-            android:textColor="@color/colorPrimary"
+            android:textColor="?attr/colorPrimary"
             app:layout_constraintBottom_toBottomOf="@+id/call_btn"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/call_btn" />
@@ -175,7 +175,7 @@
             android:layout_height="wrap_content"
             android:elevation="5dp"
             android:padding="8dp"
-            android:backgroundTint="@color/colorTertiary"
+            android:backgroundTint="@color/colorAccent"
             android:src="@drawable/ic_timer_black_24dp" />
 
     </LinearLayout>
@@ -204,7 +204,7 @@
             android:layout_height="wrap_content"
             android:elevation="5dp"
             android:padding="8dp"
-            android:backgroundTint="@color/colorTertiary"
+            android:backgroundTint="@color/colorAccent"
             android:src="@drawable/ic_note_black_24dp" />
 
     </LinearLayout>
