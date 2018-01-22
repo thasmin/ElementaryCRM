@@ -89,7 +89,7 @@ fun setupAlarms(context: Context) {
                         alarmIntent.putExtra("date", it.reminders[0].date.toEpochSecond(ZoneOffset.UTC))
                         alarmIntent.putExtra("description", it.reminders[0].text)
                         val pendingAlarmIntent = PendingIntent.getBroadcast(context, notificationId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.reminders[0].date.toEpochSecond(ZoneOffset.UTC) * 1000, pendingAlarmIntent)
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.reminders[0].date.atZone(ZoneOffset.systemDefault()).toEpochSecond() * 1000, pendingAlarmIntent)
                         notificationId += 1
                     },
                     { Log.e("setupAlarms", "unable to find reminders", it) }
