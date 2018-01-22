@@ -201,7 +201,6 @@ class ClientDetailFragment : Fragment() {
         val cursor = context!!.contentResolver.query(Uri.parse(clientUri), projection, null, null, null)
         if (cursor.moveToFirst()) {
             val contactId = cursor.getString(0)
-            name.text = cursor.getString(1)
             (activity as? TitleChanger)?.changeTitle(cursor.getString(1))
 
             disposables.add(Single.fromCallable({ getPhoneNumber(context!!, contactId) })

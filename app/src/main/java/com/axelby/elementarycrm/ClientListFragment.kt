@@ -1,7 +1,6 @@
 package com.axelby.elementarycrm
 
 import android.app.Activity.RESULT_OK
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -26,16 +25,8 @@ class ClientListFragment : Fragment() {
     private val adapter = ClientListAdapter()
     private val disposables = CompositeDisposable()
 
-    private var clientSelectedListener: OnClientSelectedListener? = null
-
     interface OnClientSelectedListener {
         fun onClientSelected(clientUri: String)
-    }
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is OnClientSelectedListener)
-            clientSelectedListener = context
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -85,6 +76,11 @@ class ClientListFragment : Fragment() {
         cursor.close()
     }
 
+    override fun onResume() {
+        super.onResume()
+        (activity as? TitleChanger)?.changeTitle("Client List")
+    }
+
     class ClientListViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val badge: QuickContactBadge = view.findViewById(R.id.badge)
         val name: TextView = view.findViewById(R.id.name)
@@ -100,7 +96,7 @@ class ClientListFragment : Fragment() {
             holder.badge.assignContactUri(Uri.parse(client.uri))
             holder.name.text = client.name
             holder.name.setOnClickListener {
-                clientSelectedListener?.onClientSelected(client.uri)
+                (activity as? OnClientSelectedListener)?.onClientSelected(client.uri)
             }
             holder.delete.setOnClickListener {
                 disposables.add(Completable.fromAction { App.instance.db.clientDao().deleteByUri(client.uri) }
