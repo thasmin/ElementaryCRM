@@ -7,22 +7,22 @@ import java.time.LocalDateTime
 import java.time.Period
 import java.time.format.DateTimeFormatter
 
-fun toReminderTime(date: LocalDateTime, now: LocalDateTime = LocalDateTime.now()): String {
-    val daysDiff = Period.between(now.toLocalDate(), date.toLocalDate()).days
+fun LocalDateTime.toReminderTime(now: LocalDateTime = LocalDateTime.now()): String {
+    val daysDiff = Period.between(now.toLocalDate(), this.toLocalDate()).days
     val timeFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("h:mm a") }
     val thisWeekFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("EEEE 'at' h:mm a") }
     val nextWeekFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("'next' EEEE 'at' h:mm a") }
     val lastWeekFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("'last' EEEE 'at' h:mm a") }
     val otherwiseFormatter: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("MMMM d 'at' h:mm a") }
     return when (daysDiff) {
-        in -6..-3 -> lastWeekFormatter.format(date)
-        -2 -> "two days ago at " + timeFormatter.format(date)
-        -1 -> "yesterday at " + timeFormatter.format(date)
-        0 -> "today at " + timeFormatter.format(date)
-        1 -> "tomorrow at " + timeFormatter.format(date)
-        in 2..6 -> thisWeekFormatter.format(date)
-        in 7..13 -> nextWeekFormatter.format(date)
-        else -> otherwiseFormatter.format(date)
+        in -6..-3 -> lastWeekFormatter.format(this)
+        -2 -> "two days ago at " + timeFormatter.format(this)
+        -1 -> "yesterday at " + timeFormatter.format(this)
+        0 -> "today at " + timeFormatter.format(this)
+        1 -> "tomorrow at " + timeFormatter.format(this)
+        in 2..6 -> thisWeekFormatter.format(this)
+        in 7..13 -> nextWeekFormatter.format(this)
+        else -> otherwiseFormatter.format(this)
     }
 }
 

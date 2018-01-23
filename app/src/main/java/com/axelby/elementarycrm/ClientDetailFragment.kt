@@ -7,9 +7,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.Rect
-import android.graphics.drawable.ColorDrawable
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -19,8 +17,14 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.util.TypedValue
-import android.view.*
-import android.widget.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.TextView
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -80,6 +84,7 @@ class ClientDetailFragment : Fragment() {
         fab.setOnClickListener { if (isFABOpen) closeFABMenu() else showFABMenu() }
         noteFab.setOnClickListener { createNote() }
         reminderFab.setOnClickListener { createReminder() }
+        reminderFab.foregroundTintList = ColorStateList.valueOf(0xff0000)
 
         loadClient()
     }
@@ -238,24 +243,7 @@ class ClientDetailFragment : Fragment() {
     }
 
     private fun showDate(view: View, date: LocalDateTime) {
-        val textView = TextView(view.context)
-        textView.setPadding(24, 24, 24, 24)
-        textView.setBackgroundColor(view.context.resources.getColor(R.color.colorAccent, null))
-        textView.text = toReminderTime(date)
-
-        val popup = PopupWindow(textView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        popup.elevation = 5.0f
-        // dismiss by touching outside
-        popup.isFocusable = true
-        popup.isOutsideTouchable = true
-        popup.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        val rect = Rect()
-        view.getGlobalVisibleRect(rect)
-        popup.showAtLocation(
-                view,
-                Gravity.NO_GRAVITY,
-                rect.left,
-                rect.top + view.height)
+        view.showPopup(date.toReminderTime())
     }
 
     class RemindersViewHolder(view: View) : RecyclerView.ViewHolder(view) {

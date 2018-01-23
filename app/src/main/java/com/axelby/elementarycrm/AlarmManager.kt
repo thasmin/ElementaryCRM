@@ -79,17 +79,17 @@ fun setupAlarms(context: Context) {
     App.instance.db.clientDao().getAll()
             .flattenAsObservable { it -> it }
             .filter { it.reminders.isNotEmpty() }
-            .flatMapIterable { it.reminders.map { rem -> Client(it.uri, it.name, arrayListOf(), arrayListOf(rem)) } }
+            .flatMapIterable { it.reminders.map { rem -> ReminderItem(it.uri, it.name, rem.date, rem.text) } }
             .subscribe(
                     {
                         val alarmIntent = Intent(context, Notifier::class.java)
                         alarmIntent.putExtra("notificationId", notificationId)
                         alarmIntent.putExtra("uri", it.uri)
                         alarmIntent.putExtra("name", it.name)
-                        alarmIntent.putExtra("date", it.reminders[0].date.toEpochSecond(ZoneOffset.UTC))
-                        alarmIntent.putExtra("description", it.reminders[0].text)
+                        alarmIntent.putExtra("date", it.date.toEpochSecond(ZoneOffset.UTC))
+                        alarmIntent.putExtra("description", it.text)
                         val pendingAlarmIntent = PendingIntent.getBroadcast(context, notificationId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.reminders[0].date.atZone(ZoneOffset.systemDefault()).toEpochSecond() * 1000, pendingAlarmIntent)
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it.date.atZone(ZoneOffset.systemDefault()).toEpochSecond() * 1000, pendingAlarmIntent)
                         notificationId += 1
                     },
                     { Log.e("setupAlarms", "unable to find reminders", it) }

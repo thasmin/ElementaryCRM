@@ -11,7 +11,7 @@ import java.io.StringWriter
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-data class Note(val date: java.time.LocalDateTime, val text: String)
+data class Note(val date: LocalDateTime, val text: String)
 
 @Entity(tableName = "clients")
 data class Client(
@@ -20,6 +20,8 @@ data class Client(
         @ColumnInfo var notes: MutableList<Note> = arrayListOf(),
         @ColumnInfo var reminders: MutableList<Note> = arrayListOf()
 )
+
+data class ReminderItem(var uri: String, var name: String, var date: LocalDateTime, val text: String)
 
 @Dao()
 interface ClientDao {
@@ -43,6 +45,14 @@ interface ClientDao {
 
     @Query("DELETE FROM clients WHERE uri = :arg0")
     fun deleteByUri(arg0: String)
+}
+
+fun ClientDao.getReminders(): Single<List<ReminderItem>> {
+    return this.getAll()
+            .flattenAsObservable { it -> it }
+            .filter { it.reminders.isNotEmpty() }
+            .flatMapIterable { it.reminders.map { rem -> ReminderItem(it.uri, it.name, rem.date, rem.text) } }
+            .toList()
 }
 
 class Converters {

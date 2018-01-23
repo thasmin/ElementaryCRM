@@ -165,6 +165,7 @@
             android:elevation="5dp"
             android:padding="8dp"
             android:backgroundTint="@color/colorAccent"
+            android:tint="?android:textColorSecondary"
             android:src="@drawable/ic_timer_black_24dp" />
 
     </LinearLayout>
@@ -194,6 +195,7 @@
             android:elevation="5dp"
             android:padding="8dp"
             android:backgroundTint="@color/colorAccent"
+            android:tint="?android:textColorSecondary"
             android:src="@drawable/ic_note_black_24dp" />
 
     </LinearLayout>
@@ -205,6 +207,7 @@
         android:elevation="5dp"
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
+        android:tint="?android:textColorSecondary"
         android:src="@drawable/ic_add_black_24dp" />
 
 </FrameLayout>

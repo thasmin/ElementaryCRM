@@ -6,12 +6,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.support.v4.app.Fragment
+import android.support.v4.graphics.drawable.DrawableCompat
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageButton
 import android.widget.QuickContactBadge
 import android.widget.TextView
@@ -29,8 +28,26 @@ class ClientListFragment : Fragment() {
         fun onClientSelected(clientUri: String)
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
+        inflater?.inflate(R.menu.menu_clientlist, menu)
+
+        val menuItem = menu!!.findItem(R.id.reminders)
+        DrawableCompat.setTint(DrawableCompat.wrap(menuItem.icon), resources.getColor(R.color.textColorOnPrimary, null))
+
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        if (item?.itemId == R.id.reminders) {
+            startActivity(Intent(context, ReminderListActivity::class.java))
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
+        setHasOptionsMenu(true)
         return inflater.inflate(R.layout.fragment_client_list, container, false)
     }
 

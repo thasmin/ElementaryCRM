@@ -8,19 +8,19 @@
     <application
         android:name=".App"
         android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        android:fullBackupContent="@xml/backup_descriptor">
-
+        android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
@@ -30,8 +30,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="app"
-                    android:host="www.elementarybusiness.com" />
+                    android:host="www.elementarybusiness.com"
+                    android:scheme="app" />
             </intent-filter>
         </activity>
 
@@ -40,7 +40,13 @@
             android:label="@string/app_name"
             android:theme="@style/AppTheme" />
 
+        <activity
+            android:name=".ReminderListActivity"
+            android:label="@string/reminders"
+            android:theme="@style/AppTheme" />
+
         <receiver android:name=".Notifier" />
+
     </application>
 
 </manifest>

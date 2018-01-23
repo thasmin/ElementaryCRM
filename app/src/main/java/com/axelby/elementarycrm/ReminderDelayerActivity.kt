@@ -47,7 +47,7 @@ class ReminderDelayerActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowHomeEnabled(true)
 
         client.text = name
-        date.text = toReminderTime(notificationDate)
+        date.text = notificationDate.toReminderTime()
         text.setText(notificationText, TextView.BufferType.EDITABLE)
         Single.fromCallable { getPhoneNumberFromUri(this, clientUri) }
                 .subscribeOn(Schedulers.io())
@@ -124,7 +124,7 @@ class ReminderDelayerActivity : AppCompatActivity() {
                     .withSecond(0)
                     .withNano(0)
             notificationDate = finalTime
-            date.text = toReminderTime(finalTime)
+            date.text = finalTime.toReminderTime()
         }
         TimePickerDialog(this, timeListener, LocalDateTime.now().hour, 0, false).show()
     }
