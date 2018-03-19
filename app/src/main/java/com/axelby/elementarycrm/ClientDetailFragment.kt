@@ -84,7 +84,6 @@ class ClientDetailFragment : Fragment() {
         fab.setOnClickListener { if (isFABOpen) closeFABMenu() else showFABMenu() }
         noteFab.setOnClickListener { createNote() }
         reminderFab.setOnClickListener { createReminder() }
-        reminderFab.foregroundTintList = ColorStateList.valueOf(0xff0000)
 
         loadClient()
     }
